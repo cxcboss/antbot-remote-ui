@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "publishedAt": "2026-07-28T00:00:00Z",
+  "files": {
+    "remote-ui/index.html": {},
+    "hub/index.html": {}
+  }
+}
