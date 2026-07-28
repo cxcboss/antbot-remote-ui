@@ -314,7 +314,7 @@ function renderAppShell(){
     <button class="nav-item" data-page="remote"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>远程</button>
     <button class="nav-item" data-page="login"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>平台登录</button>
   </nav>
-  <div class="sidebar-version" id="sidebar-version">v1.0.7</div>
+  <div class="sidebar-version" id="sidebar-version">v1.0.8</div>
 </div>
 <div class="content" id="content">
   <div class="page active" id="page-main">
@@ -436,7 +436,6 @@ function bindEvents(){
 }
 
 function switchPage(page){
-  if(loginPollTimer){clearInterval(loginPollTimer);loginPollTimer=null;}
   currentPage=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
@@ -542,7 +541,6 @@ async function loadRemoteSettings(){
   const d=await api('GET','/remote/credentials');if(!d)return;
   const p=document.getElementById('remote-pass');if(p)p.value=d.password||'';
 }
-let loginPollTimer=null;
 async function checkPlatformLogin(platform){
   const statusEl=document.getElementById('login-status-'+platform);
   const qrEl=document.getElementById('login-qr-'+platform);
@@ -561,20 +559,8 @@ async function checkPlatformLogin(platform){
     }else{
       statusEl.textContent='未登录';statusEl.className='login-status fail';
       if(r.qrDataUrl){
-        qrEl.innerHTML='<img src="'+r.qrDataUrl+'" alt="登录二维码" onclick="showQrOverlay(\''+r.qrDataUrl+'\')"/><div class="qr-tip">点击图片放大查看 · 请使用'+(platform==='weixin'?'微信':'抖音')+'扫码登录</div><div class="qr-actions"><button class="btn btn-sm btn-primary" onclick="saveQrImage(\''+r.qrDataUrl+'\')">保存截图</button></div>';
+        qrEl.innerHTML='<img src="'+r.qrDataUrl+'" alt="登录二维码" onclick="showQrOverlay(\''+r.qrDataUrl+'\')"/><div class="qr-tip">点击图片放大查看 · 请使用'+(platform==='weixin'?'微信':'抖音')+'扫码登录 · 扫码后点击下方按钮检查状态</div><div class="qr-actions"><button class="btn btn-sm btn-primary" onclick="saveQrImage(\''+r.qrDataUrl+'\')">保存截图</button><button class="btn btn-sm" style="background:var(--muted)" onclick="checkPlatformLogin(\''+platform+'\')">检查登录状态</button></div>';
         if(tipEl)tipEl.style.display='';
-        if(loginPollTimer)clearInterval(loginPollTimer);
-        loginPollTimer=setInterval(async()=>{
-          try{
-            const p=await api('POST','/platform-login',{platform});
-            if(p?.loggedIn){
-              clearInterval(loginPollTimer);loginPollTimer=null;
-              statusEl.textContent='已登录';statusEl.className='login-status ok';
-              qrEl.innerHTML='';if(tipEl)tipEl.style.display='none';
-              showToast((platform==='weixin'?'视频号':'抖音')+'登录成功');
-            }
-          }catch{}
-        },5000);
       }else{
         qrEl.innerHTML='<div class="qr-tip">'+(r.error||'未获取到二维码，请确保电脑端浏览器已打开')+'</div>';
       }
