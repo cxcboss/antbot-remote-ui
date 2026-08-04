@@ -97,7 +97,7 @@ function renderDevices(devices) {
   el.innerHTML = devices.map(d => {
     const online = d.online;
     const cls = online ? '' : ' offline';
-    return '<div class="device-card'+cls+'" data-url="'+escapeHtml(d.tunnelUrl)+'" data-name="'+escapeHtml(d.deviceName)+'" data-online="'+online+'">'
+    return '<div class="device-card'+cls+'" data-id="'+escapeHtml(d.deviceId)+'" data-url="'+escapeHtml(d.tunnelUrl)+'" data-name="'+escapeHtml(d.deviceName)+'" data-online="'+online+'">'
       + '<div class="device-icon">💻</div>'
       + '<div class="device-info">'
       + '<div class="device-name">'+escapeHtml(d.deviceName)+'</div>'
@@ -109,11 +109,11 @@ function renderDevices(devices) {
       + '</div>';
   }).join('');
   el.querySelectorAll('.device-card[data-online="true"]').forEach(card => {
-    card.addEventListener('click', () => showPasswordModal(card.dataset.name, card.dataset.url));
+    card.addEventListener('click', () => showPasswordModal(card.dataset.name, card.dataset.url, card.dataset.id));
   });
 }
 
-function showPasswordModal(deviceName, tunnelUrl) {
+function showPasswordModal(deviceName, tunnelUrl, deviceId) {
   const root = document.getElementById('modal-root');
   root.innerHTML = '<div class="modal-overlay" id="pw-modal">'
     + '<div class="modal">'
@@ -144,12 +144,12 @@ function showPasswordModal(deviceName, tunnelUrl) {
       const res = await fetch('/api/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceName, password })
+        body: JSON.stringify({ deviceId, password })
       });
       const data = await res.json();
       if (data.ok) {
         const sep = tunnelUrl.includes('?') ? '&' : '?';
-        window.location.href = tunnelUrl + sep + 'hub_token=' + data.token + '&device_name=' + encodeURIComponent(deviceName);
+        window.location.href = tunnelUrl + sep + 'hub_token=' + data.token + '&device_id=' + encodeURIComponent(deviceId) + '&device_name=' + encodeURIComponent(deviceName);
       } else {
         error.textContent = data.error || '密码错误';
         confirm.disabled = false;
