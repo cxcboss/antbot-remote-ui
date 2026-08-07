@@ -233,10 +233,13 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 .task-msg{font-size:11px;color:var(--muted-foreground);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .task.failed .task-msg{color:var(--destructive)}
 .task.warning .task-msg{color:var(--warning)}
-.task-meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted-foreground)}
-.task-meta-item{display:inline-flex;align-items:center;gap:4px}
-.task-meta-item b{font-weight:500;color:var(--foreground)}
-.task-meta-item.danger{color:var(--destructive)}
+.task-meta{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11px;align-items:center}
+.task-meta-item{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:9999px;background:var(--muted);color:var(--muted-foreground);line-height:18px}
+.task-meta-platform{color:var(--muted-foreground)}
+.task-meta-original{color:var(--foreground)}
+.task-meta-campaign{background:var(--accent);color:var(--accent-foreground)}
+.task-meta-campaign b{font-weight:600}
+.task-meta-item.danger{background:color-mix(in srgb,var(--destructive) 12%,transparent);color:var(--destructive)}
 .task-detail-toggle{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:var(--radius-sm);font-size:11px;color:var(--muted-foreground);background:none;border:none;transition:background var(--transition-fast),color var(--transition-fast)}
 .task-detail-toggle:hover{background:var(--muted);color:var(--foreground)}
 .task-detail-body{display:none;margin-top:4px;padding:8px 10px;background:var(--secondary);border-radius:var(--radius);font-size:12px}
@@ -761,12 +764,18 @@ function bindEvents(){
   });
   const input=document.getElementById('task-input');
   const sendBtn=document.getElementById('send-btn');
+  const optBtn=document.getElementById('opt-btn');
+  const syncBtns=()=>{
+    const has=!!(input?.value?.trim());
+    if(sendBtn)sendBtn.disabled=!has;
+    if(optBtn)optBtn.style.display=has?'':'none';
+  };
   if(input){
-    if(sendBtn)sendBtn.disabled=!input.value.trim();
+    syncBtns();
     input.addEventListener('input',()=>{
       input.style.height='auto';
       input.style.height=Math.min(input.scrollHeight,120)+'px';
-      if(sendBtn)sendBtn.disabled=!input.value.trim();
+      syncBtns();
       queueParsePreview();
     });
     input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendTask();}});
@@ -1268,11 +1277,9 @@ function makeRulesHtml(items){
 function makeMsgHtml(txt,rules){
   const raw=String(txt||'');
   const escapedRaw=esc(raw).replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/`/g,'\\`').replace(/\$/g,'\\$');
-  const hasUrl=/https?:\/\//i.test(raw);
   const rulesHtml=(rules&&rules.length)?makeRulesHtml(rules):'';
-  return '<div class="msg-content">'+formatMsgText(raw)+'</div>'+
-    '<div class="msg-actions"><button class="msg-act-btn" type="button" data-msg-raw data-raw="'+escapedRaw+'">'+(hasUrl?'原文':'显示原文')+'</button><button class="msg-act-btn" type="button" data-msg-copy data-copy="'+escapedRaw+'">复制</button></div>'+
-    '<div class="msg-raw">'+esc(raw.split(/\r?\n/).filter(l=>l.trim()).map((l,i)=>((raw.split(/\r?\n/).filter(l=>l.trim()).length>=3)?((i+1)+'、'):'')+l).join('\n'))+'</div>'+
+  return '<div class="msg-content">'+esc(raw)+'</div>'+
+    '<div class="msg-actions"><button class="msg-act-btn" type="button" data-msg-copy data-copy="'+escapedRaw+'">复制</button></div>'+
     rulesHtml;
 }
 
@@ -1285,11 +1292,11 @@ function taskCard(t,live){
   const badge=statusText(st);
   const msg=t.message?('<div class="task-msg">'+esc(t.message)+'</div>'):'';
 
-  // 元信息行
+  // 元信息行（纯文字标签，无图标）
   const meta=[];
-  if(r.platforms.length)meta.push('<span class="task-meta-item">'+esc(r.platforms.map(p=>platformLabel[p]||p).join('、'))+'</span>');
-  if(r.isOriginal)meta.push('<span class="task-meta-item">原创</span>');
-  if(r.campaignName)meta.push('<span class="task-meta-item">活动 <b>'+esc(r.campaignName)+'</b></span>');
+  if(r.platforms.length)meta.push('<span class="task-meta-item task-meta-platform">'+esc(r.platforms.map(p=>platformLabel[p]||p).join('、'))+'</span>');
+  if(r.isOriginal)meta.push('<span class="task-meta-item task-meta-original">原创</span>');
+  if(r.campaignName)meta.push('<span class="task-meta-item task-meta-campaign"><b>'+esc(r.campaignName)+'</b></span>');
   if(r.publishAt){const d=new Date(r.publishAt);if(!isNaN(d)){
     const expired=d.getTime()<Date.now();
     if(expired&&st!=='running'&&st!=='queued')meta.push('<span class="task-meta-item danger">定时已过期 '+esc(fmtPvTime(r.publishAt))+'</span>');
