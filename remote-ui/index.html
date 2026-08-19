@@ -440,7 +440,7 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 <div id="app"></div>
 <script>
 const HUB_URL='https://hub.onebugmanai.online';
-const APP_VERSION='1.9.2';
+const APP_VERSION='1.9.3';
 let API=window.location.origin;
 let token=localStorage.getItem('antbot-token');
 let tasks=[];
@@ -927,20 +927,48 @@ function renderChips(s){
 
 // ── Chip 弹窗（与 App 对齐：音色分类折叠 / 风格列表 / 更多开关 / 滑块） ──
 let activeChipPopup=null;
-function closeChipPopup(){if(activeChipPopup){activeChipPopup.remove();activeChipPopup=null}}
+let activeChipAnchor=null;
+let activeChipDismiss=null;
+function closeChipPopup(){
+  if(activeChipDismiss){document.removeEventListener('mousedown',activeChipDismiss);activeChipDismiss=null}
+  if(activeChipPopup){activeChipPopup.remove();activeChipPopup=null;activeChipAnchor=null}
+}
 function positionChipPopup(popup,anchor){
   document.body.appendChild(popup);
+  activeChipPopup=popup;activeChipAnchor=anchor;
+  repositionChipPopup();
+  activeChipDismiss=e=>{if(!e.target.closest('.chip-popup')&&!e.target.closest('.chip'))closeChipPopup()};
+  setTimeout(()=>{if(activeChipDismiss)document.addEventListener('mousedown',activeChipDismiss)},0);
+}
+function repositionChipPopup(){
+  const popup=activeChipPopup,anchor=activeChipAnchor;
+  if(!popup||!anchor) return;
   const rect=anchor.getBoundingClientRect();
+  const vw=window.innerWidth,vh=window.innerHeight;
+  // 先限制最大高度为可视区上方/下方可用空间
+  const spaceAbove=rect.top-12;
+  const spaceBelow=vh-rect.bottom-12;
+  const preferAbove=spaceAbove>120;
+  const available=preferAbove?spaceAbove:spaceBelow;
+  const maxH=Math.min(320,Math.max(96,available-8));
+  popup.style.maxHeight=maxH+'px';
+  popup.style.overflowY='auto';
+  // 测量真实宽高（受 maxHeight 限制后）
   const pw=popup.offsetWidth,ph=popup.offsetHeight;
   let left=rect.left+rect.width/2-pw/2;
-  let top=rect.top-ph-8;
-  if(left<8)left=8;if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;
-  if(top<8)top=rect.bottom+8;
+  let top;
+  if(preferAbove){
+    top=rect.top-ph-8;
+    if(top<8) top=8;
+  }else{
+    top=rect.bottom+8;
+    if(top+ph>vh-8) top=Math.max(8,vh-ph-8);
+  }
+  if(left<8)left=8;if(left+pw>vw-8)left=vw-pw-8;
   popup.style.left=left+'px';popup.style.top=top+'px';
-  activeChipPopup=popup;
-  setTimeout(()=>document.addEventListener('mousedown',dismissOnce),0);
-  function dismissOnce(e){if(!e.target.closest('.chip-popup')&&!e.target.closest('.chip')){closeChipPopup();document.removeEventListener('mousedown',dismissOnce)}}
 }
+window.addEventListener('resize',()=>{if(activeChipPopup)repositionChipPopup()});
+window.addEventListener('scroll',()=>{if(activeChipPopup)repositionChipPopup()},true);
 
 function showChipPopup(type,anchor){
   closeChipPopup();
@@ -960,14 +988,16 @@ function showChipPopup(type,anchor){
         const collapsed=open?'':' style="display:none"';
         return '<div class="style-section" data-section="'+src+'"><span class="style-section-arrow'+open+'" data-arrow>▶</span>'+esc(label)+'</div><div class="style-section-items"'+collapsed+'>'+items.map(v=>'<div class="style-item'+(v.name===cur?' active':'')+'" data-vname="'+esc(v.name)+'" data-vid="'+esc(v.id||'')+'">'+esc(v.name)+'</div>').join('')+'</div>';
       };
-      popup.innerHTML='<div class="style-list">'+renderSection('内置音色（Azure TTS）',azure,'azure')+renderSection('克隆音色',clone,'clone')+'</div>';
-      popup.querySelectorAll('.style-section').forEach(section=>{
+       popup.innerHTML='<div class="style-list">'+renderSection('内置音色（Azure TTS）',azure,'azure')+renderSection('克隆音色',clone,'clone')+'</div>';
+       if(activeChipPopup===popup)repositionChipPopup();
+       popup.querySelectorAll('.style-section').forEach(section=>{
         section.addEventListener('click',(e)=>{
           e.stopPropagation();
           const items=section.nextElementSibling;
           if(!items||!items.classList.contains('style-section-items'))return;
           const arrow=section.querySelector('[data-arrow]');
-          if(items.style.display==='none'){items.style.display='';arrow.classList.add('open');}else{items.style.display='none';arrow.classList.remove('open');}
+           if(items.style.display==='none'){items.style.display='';arrow.classList.add('open');}else{items.style.display='none';arrow.classList.remove('open');}
+           if(activeChipPopup===popup)repositionChipPopup();
         });
       });
       popup.querySelectorAll('.style-item').forEach(item=>{
@@ -994,7 +1024,8 @@ function showChipPopup(type,anchor){
       const styles=d?.styles||[];
       if(!styles.length){popup.innerHTML='<div class="dialog-empty">暂无风格，请先在App中学习</div>';return;}
       const cur=currentSettings?.editDefaults?.style||'';
-      popup.innerHTML='<ul class="style-list">'+styles.map(s=>'<li class="style-item'+(s.name===cur?' active':'')+'" data-val="'+esc(s.name)+'">'+esc(s.name)+'</li>').join('')+'</ul>';
+       popup.innerHTML='<ul class="style-list">'+styles.map(s=>'<li class="style-item'+(s.name===cur?' active':'')+'" data-val="'+esc(s.name)+'">'+esc(s.name)+'</li>').join('')+'</ul>';
+       if(activeChipPopup===popup)repositionChipPopup();
       popup.querySelectorAll('.style-item').forEach(item=>{
         item.addEventListener('click',async()=>{
           const val=item.dataset.val;
