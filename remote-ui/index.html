@@ -988,16 +988,16 @@ function showChipPopup(type,anchor){
         const collapsed=open?'':' style="display:none"';
         return '<div class="style-section" data-section="'+src+'"><span class="style-section-arrow'+open+'" data-arrow>▶</span>'+esc(label)+'</div><div class="style-section-items"'+collapsed+'>'+items.map(v=>'<div class="style-item'+(v.name===cur?' active':'')+'" data-vname="'+esc(v.name)+'" data-vid="'+esc(v.id||'')+'">'+esc(v.name)+'</div>').join('')+'</div>';
       };
-       popup.innerHTML='<div class="style-list">'+renderSection('内置音色（Azure TTS）',azure,'azure')+renderSection('克隆音色',clone,'clone')+'</div>';
-       if(activeChipPopup===popup)repositionChipPopup();
-       popup.querySelectorAll('.style-section').forEach(section=>{
+      popup.innerHTML='<div class="style-list">'+renderSection('内置音色（Azure TTS）',azure,'azure')+renderSection('克隆音色',clone,'clone')+'</div>';
+      if(activeChipPopup===popup)repositionChipPopup();
+      popup.querySelectorAll('.style-section').forEach(section=>{
         section.addEventListener('click',(e)=>{
           e.stopPropagation();
           const items=section.nextElementSibling;
           if(!items||!items.classList.contains('style-section-items'))return;
           const arrow=section.querySelector('[data-arrow]');
            if(items.style.display==='none'){items.style.display='';arrow.classList.add('open');}else{items.style.display='none';arrow.classList.remove('open');}
-           if(activeChipPopup===popup)repositionChipPopup();
+          if(activeChipPopup===popup)repositionChipPopup();
         });
       });
       popup.querySelectorAll('.style-item').forEach(item=>{
@@ -1024,8 +1024,8 @@ function showChipPopup(type,anchor){
       const styles=d?.styles||[];
       if(!styles.length){popup.innerHTML='<div class="dialog-empty">暂无风格，请先在App中学习</div>';return;}
       const cur=currentSettings?.editDefaults?.style||'';
-       popup.innerHTML='<ul class="style-list">'+styles.map(s=>'<li class="style-item'+(s.name===cur?' active':'')+'" data-val="'+esc(s.name)+'">'+esc(s.name)+'</li>').join('')+'</ul>';
-       if(activeChipPopup===popup)repositionChipPopup();
+      popup.innerHTML='<ul class="style-list">'+styles.map(s=>'<li class="style-item'+(s.name===cur?' active':'')+'" data-val="'+esc(s.name)+'">'+esc(s.name)+'</li>').join('')+'</ul>';
+      if(activeChipPopup===popup)repositionChipPopup();
       popup.querySelectorAll('.style-item').forEach(item=>{
         item.addEventListener('click',async()=>{
           const val=item.dataset.val;
