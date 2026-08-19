@@ -1,6 +1,6 @@
 {
-  "version": "1.9.0",
-  "publishedAt": "2026-08-19T12:00:00.000Z",
+  "version": "1.9.1",
+  "publishedAt": "2026-08-19T10:00:00Z",
   "files": {
     "remote-ui/index.html": {},
     "hub/index.html": {}
