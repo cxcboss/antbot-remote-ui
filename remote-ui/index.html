@@ -190,9 +190,11 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 .chat-search input::placeholder{color:var(--muted-foreground)}
 .chat{flex:1;overflow-y:auto;padding:0 var(--space-4)}
 .chat-stream{display:flex;flex-direction:column;max-width:640px;margin:0 auto;min-height:100%}
-.run-group{display:flex;flex-direction:column;gap:2px;padding:0 0 4px}
+.run-group{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:0 0 4px}
+.run-group.ctx-selected{opacity:.45}
+.task-stack,.msg-rules{width:100%;max-width:720px}
 .chat-time-divider{display:flex;justify-content:center;padding:20px 0 6px;font-size:11px;color:var(--muted-foreground)}
-.msg-user{position:relative;display:flex;flex-direction:column;align-items:flex-end;cursor:default}
+.msg-user{position:relative;align-self:flex-end;display:flex;flex-direction:column;align-items:flex-end;cursor:default}
 .msg-content{max-width:72%;padding:8px 12px;border-radius:var(--radius-lg);background:var(--accent);color:var(--accent-foreground);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .msg-actions{position:absolute;right:calc(100% + 6px);bottom:0;display:flex;gap:2px;opacity:0;pointer-events:none;transition:opacity var(--transition-fast)}
 .msg-user:hover .msg-actions{opacity:1;pointer-events:auto}
@@ -224,12 +226,21 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 .task-stack.collapsed .task:nth-child(n+2){display:none}
 .task-stack-summary{font-size:11px;color:var(--muted-foreground);text-align:center;padding:2px 0;cursor:pointer;transition:color var(--transition-fast)}
 .task-stack-summary:hover{color:var(--foreground)}
-.task{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);width:100%;transition:border-color var(--transition-fast)}
+.task{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);width:100%;max-width:720px;transition:border-color var(--transition-fast)}
 .task::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:transparent}
 .task.warning::before,.task.failed::before,.task.running::before,.task.preparing::before,.task.queued::before,.task.pending::before{background:var(--border)}
 .task-inner{display:flex;flex-direction:column;gap:2px;padding:4px 8px}
 .task-head{display:flex;justify-content:space-between;align-items:center;gap:6px}
-.task-title{font-size:12px;font-weight:500;color:var(--foreground);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-title{flex:1;font-size:12px;font-weight:500;color:var(--foreground);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-title-orig{margin-left:4px;padding:0 5px;border-radius:9999px;background:var(--muted);color:var(--muted-foreground);font-size:11px;line-height:14px;flex-shrink:0}
+
+/* 右键/长按菜单（复制/删除记录） */
+@keyframes tl-menu-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.tl-menu{position:fixed;z-index:10001;background:var(--popover);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);min-width:148px;padding:4px;animation:tl-menu-in 140ms ease-out}
+.tl-menu-item{display:flex;align-items:center;width:100%;height:40px;padding:0 12px;font-size:13px;text-align:left;color:var(--foreground);background:none;border:0;border-radius:var(--radius);cursor:pointer;transition:background var(--transition-fast)}
+.tl-menu-item:active{background:var(--muted)}
+.tl-menu-item.danger{color:var(--destructive)}
+.tl-menu-item.danger:active{background:var(--destructive-bg)}
 .task-title-index{margin-left:var(--space-1);font-size:10px;font-weight:400;color:var(--muted-foreground)}
 .task-badge{font-size:10px;font-weight:500;color:var(--muted-foreground);white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:4px}
 .task-msg{font-size:11px;color:var(--muted-foreground);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -488,7 +499,7 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 <div id="app"></div>
 <script>
 const HUB_URL='https://hub.onebugmanai.online';
-const APP_VERSION='1.9.8';
+const APP_VERSION='1.9.9';
 let API=window.location.origin;
 let token=localStorage.getItem('antbot-token');
 let tasks=[];
@@ -595,6 +606,68 @@ function showToast(msg,dur){
   el.addEventListener('click',e=>{if(e.target.closest('.toast-close'))return;el.remove();});
   document.body.appendChild(el);
   setTimeout(()=>el.remove(),dur||5000);
+}
+
+/* 时间线右键/长按菜单：复制原始输入、删除记录（recordId 存在时） */
+let tlMenuEl=null,tlPressTimer=null;
+function closeTlMenu(){
+  if(tlMenuEl){tlMenuEl.remove();tlMenuEl=null}
+  document.querySelectorAll('.run-group.ctx-selected').forEach(el=>el.classList.remove('ctx-selected'));
+}
+function openTlMenu(groupEl,x,y){
+  closeTlMenu();
+  const recordId=groupEl.dataset.recordId||'';
+  let txt='';try{txt=decodeURIComponent(groupEl.dataset.txt||'')}catch(_){}
+  groupEl.classList.add('ctx-selected');
+  const menu=document.createElement('div');menu.className='tl-menu';
+  menu.innerHTML='<button type="button" class="tl-menu-item" data-act="copy">复制</button>'+
+    (recordId?'<button type="button" class="tl-menu-item danger" data-act="remove">删除记录</button>':'');
+  document.body.appendChild(menu);
+  const mw=menu.offsetWidth,mh=menu.offsetHeight;
+  menu.style.left=Math.min(Math.max(8,x),window.innerWidth-mw-8)+'px';
+  menu.style.top=Math.min(Math.max(8,y),window.innerHeight-mh-8)+'px';
+  tlMenuEl=menu;
+  menu.addEventListener('click',async(e)=>{
+    const btn=e.target.closest('[data-act]');if(!btn)return;
+    if(btn.dataset.act==='copy'){if(txt)copyText(txt);closeTlMenu();return}
+    if(btn.dataset.act==='remove'){
+      closeTlMenu();
+      try{
+        const r=await api('POST','/remote/history/'+encodeURIComponent(recordId)+'/remove');
+        if(r?.ok){historyRecords=historyRecords.filter(h=>String(h.id)!==String(recordId));renderTimeline();showToast('记录已删除');}
+        else showToast(r?.error||'删除失败');
+      }catch(_){showToast('网络错误');}
+    }
+  });
+  setTimeout(()=>{
+    const dismiss=(e2)=>{if(tlMenuEl&&!tlMenuEl.contains(e2.target))closeTlMenu()};
+    document.addEventListener('click',dismiss,{once:true});
+    document.addEventListener('touchstart',dismiss,{once:true,passive:true});
+  },0);
+}
+function bindTlMenu(){
+  const stream=document.getElementById('chat-stream');if(!stream)return;
+  // 桌面浏览器右键
+  stream.addEventListener('contextmenu',e=>{
+    const g=e.target.closest('.run-group');if(!g)return;
+    e.preventDefault();openTlMenu(g,e.clientX,e.clientY);
+  });
+  // 手机长按 550ms（位移 >10px 取消）
+  let startX=0,startY=0,gEl=null;
+  stream.addEventListener('touchstart',e=>{
+    const g=e.target.closest('.run-group');if(!g)return;
+    gEl=g;startX=e.touches[0].clientX;startY=e.touches[0].clientY;
+    clearTimeout(tlPressTimer);
+    tlPressTimer=setTimeout(()=>{
+      openTlMenu(gEl,startX,startY);
+      if(navigator.vibrate)navigator.vibrate(15);
+    },550);
+  },{passive:true});
+  stream.addEventListener('touchmove',e=>{
+    if(!tlPressTimer)return;
+    if(Math.abs(e.touches[0].clientX-startX)>10||Math.abs(e.touches[0].clientY-startY)>10){clearTimeout(tlPressTimer);tlPressTimer=null}
+  },{passive:true});
+  stream.addEventListener('touchend',()=>{clearTimeout(tlPressTimer);tlPressTimer=null},{passive:true});
 }
 
 function copyText(text){
@@ -1824,7 +1897,12 @@ function taskCard(t,live){
   const idx=t.index||t.queueIndex||0;
   const r=rulesFromItem(t);
   const taskId=taskExecutionId(t);
-  const title=(t.taskName&&t.taskName!=='普通')?t.taskName:(r.videoUrl?shortUrl(r.videoUrl):(r.isOriginal?'原创':'任务'));
+  /* 标题规则与桌面端一致：执行中=原创/非原创；完成后=AI 成品文件名 + 原创/非原创 标记 */
+  const origLabel=r.isOriginal?'原创':'非原创';
+  let title;
+  if(t.outputPath){const base=String(t.outputPath).split(/[\\/]/).pop().replace(/\.[^.]+$/,'');title=base||origLabel;}
+  else{title=origLabel;}
+  const origTag='<span class="task-title-orig">'+origLabel+'</span>';
   const titleMeta=idx?'<span class="task-title-index">任务 '+idx+'</span>':'';
   const retrying=t.retryCount>0&&st==='running';
   const expectedUnpublished=st==='warning'&&/自动发布已关闭|成品已生成/.test(String(t.message||''));
@@ -1873,7 +1951,7 @@ function taskCard(t,live){
   const actsHtml=acts.length?('<div class="task-actions">'+acts.join('')+'</div>'):'';
   const timeStr=t.startedAt||t.enqueuedAt?('<span class="task-time">'+esc(fmtGroupTime(t.startedAt||t.enqueuedAt))+'</span>'):'';
 
-  const inner='<div class="task-inner"><div class="task-head"><div class="task-title" title="'+esc(title)+'">'+esc(title)+' '+titleMeta+'</div>'+detailToggle+'<div class="task-badge">'+esc(badge)+'</div>'+timeStr+'</div>'+metaHtml+detailHtml+progressHtml+msg+actsHtml+'</div>';
+  const inner='<div class="task-inner"><div class="task-head"><div class="task-title" title="'+esc(title)+'">'+esc(title)+' '+origTag+' '+titleMeta+'</div>'+detailToggle+'<div class="task-badge">'+esc(badge)+'</div>'+timeStr+'</div>'+metaHtml+detailHtml+progressHtml+msg+actsHtml+'</div>';
   const overlay=isCancelling?'<div class="task-cancelling">取消中...</div>':'';
   return '<div class="task '+esc(st)+'">'+inner+overlay+'</div>';
 }
@@ -1905,7 +1983,7 @@ function renderTimeline(){
   // 历史按时间倒序处理，同一任务跨 run 重复时保留最新的一份。
   const historySeenIds=new Set();
   const historyGroups=historyRecords
-    .map(r=>({txt:r.inputText||'',items:dedupeTaskItems(r.items||[]),at:r.startedAt||r.endedAt||''}))
+    .map(r=>({id:r.id||'',txt:r.inputText||'',items:dedupeTaskItems(r.items||[]),at:r.startedAt||r.endedAt||''}))
     .map(g=>({
       ...g,
       items:g.items.filter(item=>{
@@ -1944,7 +2022,7 @@ function renderTimeline(){
 
   const parts=[];
   const isForceExpand=chatFilter!=='all'||!!chatSearch;
-  const group=(at,txt,rulesItems,items,live,key)=>{
+  const group=(at,txt,rulesItems,items,live,key,recordId)=>{
     let tasksHtml='';
     if(items&&items.length){
       const collapsed=!isForceExpand&&items.length>3&&!expandedStacks.has(key);
@@ -1954,14 +2032,14 @@ function renderTimeline(){
       tasksHtml=summary+'<div class="task-stack'+(collapsed?' collapsed':'')+'">'+items.map(t=>taskCard(t,live)).join('')+'</div>';
     }
     if(at)parts.push('<div class="chat-time-divider">'+esc(fmtGroupTime(at))+'</div>');
-    parts.push('<div class="run-group">'+
+    parts.push('<div class="run-group"'+(recordId?' data-record-id="'+esc(recordId)+'"':'')+' data-group-key="'+esc(key)+'" data-txt="'+encodeURIComponent(txt||'')+'">'+
       (txt?makeMsgHtml(txt,rulesItems,key):'')+
       tasksHtml+'</div>');
   };
 
   visibleHistoryGroups.forEach(g=>{
     const rulesItems=g.items.map(rulesFromItem).filter(x=>x.platforms.length||x.isOriginal||x.campaignName||x.publishAt);
-    group(g.at,g.txt,rulesItems.length?rulesItems:null,g.items.map(i=>({...i,id:taskExecutionId(i),history:true})),false,'h:'+(g.at||''));
+    group(g.at,g.txt,rulesItems.length?rulesItems:null,g.items.map(i=>({...i,id:taskExecutionId(i),history:true})),false,'h:'+(g.at||''),g.id);
   });
 
   liveGroups.forEach(g=>{
@@ -1975,6 +2053,6 @@ function renderTimeline(){
 }
 
 // ── Init ──
-if(token){initApp()}else{renderLogin()}
+if(token){initApp();bindTlMenu()}else{renderLogin()}
 </script>
 </body></html>
