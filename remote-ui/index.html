@@ -179,12 +179,20 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── 主控：时间线（与 App 对齐） ── */
-.chat-toolbar{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-4);border-bottom:1px solid var(--border);background:var(--background);flex-shrink:0}
-.chat-filter-tabs{display:flex;align-items:center;gap:var(--space-3);min-width:0;overflow-x:auto}
+/* 工具栏：筛选 tabs + 搜索按钮 + 停止全部，单行不换行；搜索行展开在下方 */
+.chat-toolbar-wrap{border-bottom:1px solid var(--border);background:var(--background);flex-shrink:0}
+.chat-toolbar{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);flex-wrap:nowrap}
+.chat-filter-tabs{display:flex;align-items:center;gap:var(--space-3);min-width:0;flex:1;overflow-x:auto;scrollbar-width:none}
+.chat-filter-tabs::-webkit-scrollbar{display:none}
 .chat-filter{height:28px;padding:0 var(--space-2);border:0;border-bottom:2px solid transparent;background:none;color:var(--muted-foreground);font-size:12px;white-space:nowrap;cursor:pointer;transition:color var(--transition-fast),border-color var(--transition-fast)}
 .chat-filter:hover{color:var(--foreground)}
 .chat-filter.active{border-color:var(--foreground);color:var(--foreground);font-weight:500}
-.chat-search{display:flex;align-items:center;gap:var(--space-1);width:180px;height:28px;padding:0 var(--space-2);border:1px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--muted-foreground);flex-shrink:0}
+.chat-search-toggle{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);color:var(--muted-foreground);cursor:pointer;flex-shrink:0;transition:border-color var(--transition-fast),color var(--transition-fast),background var(--transition-fast)}
+.chat-search-toggle:hover{border-color:var(--muted-foreground);color:var(--foreground)}
+.chat-search-toggle.active{background:var(--accent);color:var(--accent-foreground);border-color:transparent}
+.chat-search-row{display:none;padding:0 var(--space-4) var(--space-2)}
+.chat-search-row.open{display:flex}
+.chat-search{display:flex;align-items:center;gap:var(--space-1);width:100%;height:30px;padding:0 var(--space-2);border:1px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--muted-foreground);flex-shrink:0}
 .chat-search:focus-within{border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 12%,transparent)}
 .chat-search input{width:100%;border:0;outline:0;background:transparent;color:var(--foreground);font-size:12px}
 .chat-search input::placeholder{color:var(--muted-foreground)}
@@ -196,12 +204,6 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 .chat-time-divider{display:flex;justify-content:center;padding:20px 0 6px;font-size:11px;color:var(--muted-foreground)}
 .msg-user{position:relative;align-self:flex-end;display:flex;flex-direction:column;align-items:flex-end;cursor:default}
 .msg-content{max-width:72%;padding:8px 12px;border-radius:var(--radius-lg);background:var(--accent);color:var(--accent-foreground);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
-.msg-actions{position:absolute;right:calc(100% + 6px);bottom:0;display:flex;gap:2px;opacity:0;pointer-events:none;transition:opacity var(--transition-fast)}
-.msg-user:hover .msg-actions{opacity:1;pointer-events:auto}
-.msg-act-btn{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:var(--radius-sm);font-size:11px;color:var(--muted-foreground);background:none;border:none;transition:background var(--transition-fast),color var(--transition-fast)}
-.msg-act-btn:hover{background:var(--muted);color:var(--foreground)}
-.msg-raw{display:none;font-size:11px;color:var(--muted-foreground);padding:8px 10px;background:var(--secondary);border-radius:var(--radius);white-space:pre-wrap;word-break:break-word}
-.msg-raw.show{display:block}
 .hidden{display:none!important}
 [hidden]{display:none!important}
 
@@ -306,8 +308,10 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 .pv-title{color:var(--muted-foreground);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .pv-warn{color:var(--warning);font-size:11px}
 .pv-acts{display:flex;justify-content:flex-end;padding-top:6px;border-top:1px solid var(--border);margin-top:2px}
-.chips{display:flex;gap:var(--space-2);margin-top:var(--space-2);flex-wrap:wrap;max-width:640px;margin-left:auto;margin-right:auto}
-.chip{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:var(--radius);font-size:11px;font-weight:400;border:0;background:transparent;color:var(--muted-foreground);cursor:pointer;transition:background var(--transition-fast),color var(--transition-fast)}
+/* chips 单行横滑：小屏装不下时左右滑动查看全部按钮，不换行增高输入区 */
+.chips{display:flex;gap:var(--space-2);margin-top:var(--space-2);flex-wrap:nowrap;overflow-x:auto;max-width:640px;margin-left:auto;margin-right:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:var(--radius);font-size:11px;font-weight:400;border:0;background:transparent;color:var(--muted-foreground);cursor:pointer;flex-shrink:0;transition:background var(--transition-fast),color var(--transition-fast)}
 .chip:hover{background:var(--muted);color:var(--muted-foreground)}
 .chip .vl{font-weight:500;color:var(--muted-foreground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
 .chip-spacer{flex:1}
@@ -474,12 +478,34 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 .card{transition:border-color var(--transition-fast)}
 .card:hover{border-color:color-mix(in srgb,var(--border) 60%,var(--muted-foreground))}
 
-/* 芯片弹窗在移动端底部输入条适配 */
+/* 芯片弹窗在移动端底部输入条适配 + 手机/平板阅读体验优化 */
 @media(max-width:767px){
   .chip-popup{max-width:calc(100vw - 16px);left:8px!important;right:8px!important;width:auto}
   .input-bar{padding-bottom:calc(var(--space-3) + env(safe-area-inset-bottom))}
-  .chat-toolbar{align-items:stretch;flex-direction:column;gap:var(--space-2);padding:var(--space-2) var(--space-3)}
-  .chat-search{width:100%}
+  .chat-toolbar{padding:var(--space-2) var(--space-3)}
+  .chat-search-row{padding:0 var(--space-3) var(--space-2)}
+  /* 触控目标：筛选 tab 与任务按钮加大到 34px/28px */
+  .chat-filter{height:34px;font-size:13px}
+  .task-btn{height:28px;padding:0 10px;font-size:12px}
+  /* 文字大小：消息正文与卡片信息整体上调一档 */
+  .msg-content{font-size:15px;padding:10px 14px}
+  .task-title{font-size:13px}
+  .task-title-orig{font-size:12px;line-height:16px}
+  .task-title-index{font-size:11px}
+  .task-badge{font-size:11px}
+  .task-time{font-size:11px}
+  .task-msg{font-size:12px}
+  .task-meta{font-size:12px}
+  .task-meta-item{line-height:18px}
+  .task-inner{padding:6px 10px}
+  .task-detail-toggle{width:28px;height:28px}
+  .msg-rules-head{font-size:13px;padding:10px 12px}
+  .msg-rules-body{padding:4px 12px 12px}
+  .rule-item-title{font-size:13px}
+  .rule-item-fields{font-size:12px}
+  .chat-time-divider{font-size:12px;padding:16px 0 6px}
+  .task-stack-summary{font-size:12px}
+  .task-detail-body{font-size:13px}
 }
 
 /* ── 响应式：桌面（≥768px） ── */
@@ -499,7 +525,7 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 <div id="app"></div>
 <script>
 const HUB_URL='https://hub.onebugmanai.online';
-const APP_VERSION='1.9.9';
+const APP_VERSION='1.9.10';
 let API=window.location.origin;
 let token=localStorage.getItem('antbot-token');
 let tasks=[];
@@ -839,6 +865,7 @@ function renderAppShell(){
     </aside>
     <div class="content">
       <div class="page active" id="page-main">
+        <div class="chat-toolbar-wrap">
         <div class="chat-toolbar">
           <div class="chat-filter-tabs" role="tablist" aria-label="任务筛选">
             <button type="button" class="chat-filter active" data-chat-filter="all">全部</button>
@@ -846,8 +873,12 @@ function renderAppShell(){
             <button type="button" class="chat-filter" data-chat-filter="attention">需处理</button>
             <button type="button" class="chat-filter" data-chat-filter="completed">已完成</button>
           </div>
-          <label class="chat-search"><span style="font-size:13px">⌕</span><input id="chat-search-input" type="search" placeholder="搜索标题、链接或错误" /></label>
+          <button type="button" class="chat-search-toggle" id="chat-search-toggle" aria-label="搜索" title="搜索"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></button>
           <button type="button" class="task-btn" id="chat-stop-all">停止全部</button>
+        </div>
+        <div class="chat-search-row" id="chat-search-row">
+          <label class="chat-search"><span style="font-size:13px">⌕</span><input id="chat-search-input" type="search" placeholder="搜索标题、链接或错误" /></label>
+        </div>
         </div>
         <div class="chat" id="chat"><div class="chat-stream" id="chat-stream"><div class="empty" id="empty-state"><div class="empty-icon">📋</div><div>粘贴视频链接开始下载</div></div></div></div>
       </div>
@@ -1016,6 +1047,16 @@ function bindEvents(){
     document.querySelectorAll('[data-chat-filter]').forEach(item=>item.classList.toggle('active',item===btn));
     renderTimeline();
   }));
+  document.getElementById('chat-search-toggle')?.addEventListener('click',()=>{
+    const row=document.getElementById('chat-search-row');
+    const btn=document.getElementById('chat-search-toggle');
+    if(!row)return;
+    const open=row.classList.toggle('open');
+    btn?.classList.toggle('active',open);
+    const inp=document.getElementById('chat-search-input');
+    if(open){inp?.focus();}
+    else if(inp){inp.value='';if(chatSearch){chatSearch='';renderTimeline();}}
+  });
   document.getElementById('chat-search-input')?.addEventListener('input',e=>{chatSearch=e.target.value||'';renderTimeline();});
   document.getElementById('chat-stop-all')?.addEventListener('click',async e=>{
     if(!confirm('确认停止全部任务？'))return;
@@ -1025,7 +1066,7 @@ function bindEvents(){
     finally{btn.disabled=false;btn.textContent='停止全部';}
   });
   document.getElementById('chat-stream')?.addEventListener('click',e=>{
-    // 时间线交互：集合展开/原文/复制/规则展开/任务详情/操作
+    // 时间线交互：集合展开/规则展开/任务详情/操作
     const stackToggle=e.target.closest('[data-stack-toggle]');
     if(stackToggle){
       const key=stackToggle.dataset.stackKey||'';
@@ -1037,14 +1078,6 @@ function bindEvents(){
       }
       return;
     }
-    const rawBtn=e.target.closest('[data-msg-raw]');
-    if(rawBtn){
-      const box=rawBtn.closest('.msg-user')?.querySelector('.msg-raw');
-      if(box){const shown=box.classList.toggle('show');rawBtn.textContent=shown?'隐藏原文':'原文';}
-      return;
-    }
-    const copyBtn=e.target.closest('[data-msg-copy]');
-    if(copyBtn){copyText(copyBtn.dataset.copy||'');return;}
     const ruleToggle=e.target.closest('[data-rule-toggle]');
     if(ruleToggle){ruleToggle.closest('.msg-rules')?.classList.toggle('open');return;}
     const detailToggle=e.target.closest('[data-task-detail]');
@@ -1851,17 +1884,7 @@ function isTerminalTaskStatus(status){
   return ['completed','warning','failed','stopped','cancelled','canceled'].includes(String(status||''));
 }
 
-function formatMsgText(raw){
-  if(!raw)return'';
-  const lines=String(raw).split(/\r?\n/).filter(l=>l.trim());
-  const showNum=lines.length>=3;
-  return lines.map((line,i)=>{
-    const num=showNum?((i+1)+'、'):'';
-    const f=line.replace(/https?:\/\/[^\s,，。；;）)]+/g,shortUrl);
-    return num+esc(f);
-  }).join('\n');
-}
-
+/* 规则面板：默认收起，点击展开（与 App 对齐） */
 function makeRulesHtml(items){
   const rules=items.map(rulesFromItem);
   const parts=[];
@@ -1878,16 +1901,16 @@ function makeRulesHtml(items){
   const platSet=new Set();
   rules.forEach(t=>(t.platforms||[]).forEach(p=>platSet.add(platformLabel[p]||p)));
   const summary='已按规则解析 '+rules.length+' 条任务 · 原创 '+origCount+' · '+[...platSet].join('、');
-  return '<div class="msg-rules open"><button type="button" class="msg-rules-head" data-rule-toggle><span class="msg-rules-summary">'+esc(summary)+'</span><span class="msg-rules-arrow">›</span></button><div class="msg-rules-body">'+parts.join('')+'</div></div>';
+  return '<div class="msg-rules"><button type="button" class="msg-rules-head" data-rule-toggle><span class="msg-rules-summary">'+esc(summary)+'</span><span class="msg-rules-arrow">›</span></button><div class="msg-rules-body">'+parts.join('')+'</div></div>';
 }
 
 function makeMsgHtml(txt,rules,key){
   const raw=String(txt||'');
   if(!raw)return '';
   const rulesHtml=(rules&&rules.length)?makeRulesHtml(rules):'';
+  /* 复制走长按/右键菜单（触屏无 hover，气泡内复制按钮不可用），与 App 的右键菜单对齐 */
   return '<div class="msg-user">'+
-    '<div class="msg-content">'+esc(raw)+'</div>'+
-    '<div class="msg-actions"><button class="msg-act-btn" type="button" data-msg-copy data-copy="'+esc(raw)+'">复制</button></div></div>'+
+    '<div class="msg-content">'+esc(raw)+'</div></div>'+
     rulesHtml;
 }
 
@@ -2038,8 +2061,8 @@ function renderTimeline(){
   };
 
   visibleHistoryGroups.forEach(g=>{
-    const rulesItems=g.items.map(rulesFromItem).filter(x=>x.platforms.length||x.isOriginal||x.campaignName||x.publishAt);
-    group(g.at,g.txt,rulesItems.length?rulesItems:null,g.items.map(i=>({...i,id:taskExecutionId(i),history:true})),false,'h:'+(g.at||''),g.id);
+    /* 历史记录只显示消息气泡+任务卡片，不渲染规则面板（与 App 对齐） */
+    group(g.at,g.txt,null,g.items.map(i=>({...i,id:taskExecutionId(i),history:true})),false,'h:'+(g.at||''),g.id);
   });
 
   liveGroups.forEach(g=>{
