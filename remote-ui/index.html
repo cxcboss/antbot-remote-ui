@@ -406,6 +406,7 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 .status-dot{width:8px;height:8px;border-radius:var(--radius-full);flex-shrink:0}
 .status-dot.ok{background:var(--success)}
 .status-dot.fail{background:var(--destructive)}
+.status-dot.idle{background:var(--border)}
 .status-queue-row{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);padding:var(--space-3)}
 .status-queue-item{text-align:center}
 .status-queue-num{font-size:20px;font-weight:700;color:var(--foreground)}
@@ -507,7 +508,7 @@ input[type=number]::-webkit-inner-spin-button{opacity:1}
 <div id="app"></div>
 <script>
 const HUB_URL='https://hub.onebugmanai.online';
-const APP_VERSION='1.9.11';
+const APP_VERSION='1.9.12';
 let API=window.location.origin;
 let token=localStorage.getItem('antbot-token');
 let tasks=[];
@@ -1518,10 +1519,13 @@ async function loadSystemStatus(){
   const services=document.getElementById('status-services');
   if(services){
     const svc=d.services||{};
+    // 休眠阻断状态：任务（含剪辑）执行中系统保持唤醒，无任务恢复休眠倒计时
+    const sleepBlocked=!!d.sleepBlocked;
+    const sleepItem='<div class="status-item"><span class="status-dot '+(sleepBlocked?'ok':'idle')+'"></span><div class="status-item-body"><div class="status-item-name">休眠阻断</div><div class="status-item-url">'+(sleepBlocked?'任务运行中，系统保持唤醒':'无活跃任务，允许系统休眠')+'</div></div><span class="badge '+(sleepBlocked?'badge-ok':'badge-pending')+'">'+(sleepBlocked?'已阻止':'允许休眠')+'</span></div>';
     services.innerHTML=Object.values(svc).map(s=>{
       const st=s.running?'ok':'fail';
       return '<div class="status-item"><span class="status-dot '+st+'"></span><div class="status-item-body"><div class="status-item-name">'+esc(s.name)+'</div>'+(s.url?'<div class="status-item-url">'+esc(s.url)+'</div>':'')+'</div><span class="badge '+(s.running?'badge-ok':'badge-fail')+'">'+(s.running?'运行中':'已停止')+'</span></div>';
-    }).join('');
+    }).join('')+sleepItem;
   }
   const queue=document.getElementById('status-queue');
   if(queue){
